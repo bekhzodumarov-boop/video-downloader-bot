@@ -11,7 +11,11 @@ import yt_dlp
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ALLOWED_CHAT_ID = int(os.getenv("CHAT_ID"))
+ALLOWED_CHAT_IDS = set(
+    int(x.strip())
+    for x in os.getenv("CHAT_IDS", os.getenv("CHAT_ID", "")).split(",")
+    if x.strip()
+)
 COOKIES_BASE64 = os.getenv("COOKIES_BASE64", "")
 
 logging.basicConfig(
@@ -35,7 +39,7 @@ def is_supported_url(text: str) -> bool:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if user_id != ALLOWED_CHAT_ID:
+    if user_id not in ALLOWED_CHAT_IDS:
         return
 
     text = update.message.text.strip()
