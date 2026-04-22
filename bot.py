@@ -81,13 +81,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await status_msg.edit_text("❌ Видео больше 50 МБ — Telegram не позволяет отправить такой файл.")
             return
 
+        caption = (info.get("title", "") or "")[:1024]
         await status_msg.edit_text(f"📤 Отправляю... ({file_size // 1024 // 1024} МБ)")
         try:
             with open(filepath, "rb") as f:
                 await update.message.reply_video(
                     video=f,
                     supports_streaming=True,
-                    caption=info.get("title", ""),
+                    caption=caption,
                     read_timeout=180,
                     write_timeout=180,
                     connect_timeout=30,
@@ -99,7 +100,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 with open(filepath, "rb") as f:
                     await update.message.reply_document(
                         document=f,
-                        caption=info.get("title", ""),
+                        caption=caption,
                         read_timeout=180,
                         write_timeout=180,
                         connect_timeout=30,
