@@ -81,27 +81,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await status_msg.edit_text("❌ Видео больше 50 МБ — Telegram не позволяет отправить такой файл.")
             return
 
-        await status_msg.edit_text("📤 Отправляю...")
+        await status_msg.edit_text(f"📤 Отправляю... ({file_size // 1024 // 1024} МБ)")
         try:
             with open(filepath, "rb") as f:
                 await update.message.reply_video(
                     video=f,
                     supports_streaming=True,
                     caption=info.get("title", ""),
-                    read_timeout=120,
-                    write_timeout=120,
+                    read_timeout=180,
+                    write_timeout=180,
                     connect_timeout=30,
                 )
-        except Exception:
-            with open(filepath, "rb") as f:
-                await update.message.reply_document(
-                    document=f,
-                    caption=info.get("title", ""),
-                    read_timeout=120,
-                    write_timeout=120,
-                    connect_timeout=30,
-                )
-        await status_msg.delete()
+            await status_msg.delete()
+        except Exception as e1:
+            logging.error(f"reply_video failed: {e1}")
+            try:
+                with open(filepath, "rb") as f:
+                    await update.message.reply_document(
+                        document=f,
+                        caption=info.get("title", ""),
+                        read_timeout=180,
+                        write_timeout=180,
+                        connect_timeout=30,
+                    )
+                await status_msg.delete()
+            except Exception as e2:
+                logging.error(f"reply_document failed: {e2}")
+                await status_msg.edit_text(f"❌ Не удалось отправить файл.\nVideo: {str(e1)[:150]}\nDoc: {str(e2)[:150]}")
 
 
 def _download(url: str, opts: dict) -> dict:
