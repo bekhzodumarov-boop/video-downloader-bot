@@ -82,12 +82,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         await status_msg.edit_text("📤 Отправляю...")
-        with open(filepath, "rb") as f:
-            await update.message.reply_video(
-                video=f,
-                supports_streaming=True,
-                caption=info.get("title", ""),
-            )
+        try:
+            with open(filepath, "rb") as f:
+                await update.message.reply_video(
+                    video=f,
+                    supports_streaming=True,
+                    caption=info.get("title", ""),
+                    read_timeout=120,
+                    write_timeout=120,
+                    connect_timeout=30,
+                )
+        except Exception:
+            with open(filepath, "rb") as f:
+                await update.message.reply_document(
+                    document=f,
+                    caption=info.get("title", ""),
+                    read_timeout=120,
+                    write_timeout=120,
+                    connect_timeout=30,
+                )
         await status_msg.delete()
 
 
