@@ -3,6 +3,8 @@ import logging
 import tempfile
 import asyncio
 import base64
+import re
+import requests
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
@@ -31,6 +33,24 @@ if COOKIES_BASE64:
     logging.info("Куки загружены из переменной окружения.")
 
 
+def resolve_url(url: str) -> str:
+    if "fifa.com" not in url:
+        return url
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        resp = requests.get(url, headers=headers, timeout=15)
+        # Ищем Brightcove account + video ID
+        account = re.search(r'"accountId"\s*:\s*"(\d+)"', resp.text)
+        video = re.search(r'"videoId"\s*:\s*"(\d+)"', resp.text)
+        if account and video:
+            bc_url = f"https://players.brightcove.net/{account.group(1)}/default_default/index.html?videoId={video.group(1)}"
+            logging.info(f"FIFA → Brightcove URL: {bc_url}")
+            return bc_url
+    except Exception as e:
+        logging.error(f"FIFA resolve error: {e}")
+    return url
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ALLOWED_CHAT_IDS:
@@ -42,6 +62,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     status_msg = await update.message.reply_text("⏬ Скачиваю...")
+    text = resolve_url(text)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         output_template = os.path.join(tmpdir, "%(id)s.%(ext)s")
@@ -50,7 +71,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "format": "best[filesize<50M]/best",
             "quiet": False,
             "no_warnings": False,
-                   "force_generic_extractor": True, }
+            "force_generic_extractor": True,
+        }
 
         if COOKIES_BASE64 and os.path.exists(COOKIES_FILE):
             ydl_opts["cookiefile"] = COOKIES_FILE
