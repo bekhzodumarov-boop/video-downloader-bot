@@ -23,8 +23,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-SUPPORTED_DOMAINS = ("instagram.com", "facebook.com", "fb.watch", "fb.com")
-
 COOKIES_FILE = "/tmp/cookies.txt"
 
 if COOKIES_BASE64:
@@ -33,18 +31,14 @@ if COOKIES_BASE64:
     logging.info("Куки загружены из переменной окружения.")
 
 
-def is_supported_url(text: str) -> bool:
-    return any(domain in text for domain in SUPPORTED_DOMAINS)
-
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id not in ALLOWED_CHAT_IDS:
         return
 
     text = update.message.text.strip()
-    if not is_supported_url(text):
-        await update.message.reply_text("Пришли ссылку на Instagram или Facebook.")
+    if not text.startswith("http"):
+        await update.message.reply_text("Пришли ссылку на видео.")
         return
 
     status_msg = await update.message.reply_text("⏬ Скачиваю...")
