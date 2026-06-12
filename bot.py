@@ -50,7 +50,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "format": "best[filesize<50M]/best",
             "quiet": False,
             "no_warnings": False,
-        }
+                   "force_generic_extractor": True, }
 
         if COOKIES_BASE64 and os.path.exists(COOKIES_FILE):
             ydl_opts["cookiefile"] = COOKIES_FILE
